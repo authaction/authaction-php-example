@@ -1,10 +1,10 @@
 # authaction-php-example
 
-A plain PHP application demonstrating API authorization using [AuthAction](https://app.authaction.com/) with JWKS-based JWT validation. No framework required — runs with the PHP built-in server.
+A plain PHP application demonstrating API authorization using [AuthAction](https://app.authaction.com/) with the `authaction/authaction-php-sdk`. No framework required — runs with the PHP built-in server.
 
 ## Overview
 
-This application shows how to configure and handle authorization using AuthAction's access tokens in a plain PHP API. It validates JSON Web Tokens (JWT) signed with RS256 by fetching public keys dynamically from AuthAction's JWKS endpoint.
+This application shows how to configure and handle authorization using AuthAction's access tokens in a plain PHP API. It validates JSON Web Tokens (JWT) using the `authaction` SDK, which handles JWKS fetching and RS256 validation automatically.
 
 ## Prerequisites
 
@@ -92,7 +92,7 @@ authaction-php-example/
 ├── public/
 │   └── index.php        # Entry point: simple router + route handlers
 ├── src/
-│   └── JwtValidator.php # JWKS fetching, in-memory caching, JWT validation
+│   └── JwtValidator.php # Thin wrapper around AuthAction\AuthAction SDK client
 ├── .env.example
 ├── composer.json
 └── README.md
@@ -102,15 +102,9 @@ authaction-php-example/
 
 ### `src/JwtValidator.php` — JWT Validation
 
-- **`getJwks()`** — Fetches public keys from
-  `https://{AUTHACTION_DOMAIN}/.well-known/jwks.json` and stores them in a
-  static property for the lifetime of the request. On key rotation (kid not
-  found), the cache is busted and the JWKS is re-fetched once.
+Wraps a singleton `AuthAction\AuthAction` client (from `authaction/authaction-php-sdk`). The SDK is initialised with `AUTHACTION_DOMAIN` and `AUTHACTION_AUDIENCE` and handles JWKS fetching and RS256 JWT validation internally.
 
-- **`verify()`** — Decodes and validates the JWT using `firebase/php-jwt` with:
-  - Algorithm: `RS256`
-  - Issuer: `https://{AUTHACTION_DOMAIN}` (validated manually)
-  - Audience: `{AUTHACTION_AUDIENCE}` (validated manually)
+- **`verify(string $token)`** — Calls `AuthAction::verifyToken($token)`. Throws a `RuntimeException` on `TokenExpiredException` or `TokenInvalidException`.
 
 ### `public/index.php` — Router
 
